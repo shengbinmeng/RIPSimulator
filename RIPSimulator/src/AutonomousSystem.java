@@ -134,7 +134,14 @@ class RipRouter {
 	}
 	
 	public void addTableEntry(TableEntry entry) {
-		routingTable.add(entry);
+		int i;
+		for (i = 0; i < routingTable.size(); i++) {
+			TableEntry e = routingTable.get(i);
+			if (e.destinationNet.compareTo(entry.destinationNet) > 0) {
+				break;
+			}
+		}
+		routingTable.add(i, entry);
 	}
 	
 	public void addNeighbour(RipRouter router) {
