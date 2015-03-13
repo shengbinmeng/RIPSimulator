@@ -62,7 +62,7 @@ public class AutonomousSystem {
 		}
 	}
 	
-	void simulate() {
+	void simulate(boolean instability) {
 		int round = 1;
 		while (true) {
 			System.out.println("## At beginning of Round " + round + "");
@@ -83,6 +83,19 @@ public class AutonomousSystem {
 				}
 				if (influenced) {
 					converged = false;
+				}
+				
+				if (instability) {
+					if (round == 1 && router.getName().equals("R1")) {
+						ArrayList<TableEntry> table = router.getRoutingTable();
+						for (int k = 0; k < table.size(); k++) {
+							TableEntry entry = table.get(k);
+							if (entry.destinationNet.equals("N1")) {
+								entry.nextRouter = null;
+								entry.hopNumber = UNAVAILABLE_HOP_NUMBER;
+							}
+						}
+					}
 				}
 			}
 			System.out.println("Done operations of Round " + round + ".");
@@ -129,10 +142,17 @@ class RipRouter {
 		for (int i = 0; i < routingTable.size(); i++) {
 			TableEntry current = routingTable.get(i);
 			TableEntry received = receivedTable.get(i);
-			if (current.hopNumber > received.hopNumber + 1) {
+			if (current.nextRouter == router) {
+				current.hopNumber = received.hopNumber + 1;
+				updated = true;
+			} else if (current.hopNumber > received.hopNumber + 1) {
 				current.hopNumber = received.hopNumber + 1;
 				current.nextRouter = router;
 				updated = true;
+			}
+			
+			if (current.hopNumber > AutonomousSystem.UNAVAILABLE_HOP_NUMBER) {
+				current.hopNumber = AutonomousSystem.UNAVAILABLE_HOP_NUMBER;
 			}
 		}
 		return updated;

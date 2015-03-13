@@ -3,7 +3,7 @@ public class RipSimulator {
 		System.out.println("Simulator started.");
 		AutonomousSystem as = new AutonomousSystem();
 		as.configure();
-		as.simulate();
+		as.simulate(true);
 		System.out.println("End of simulation.");
 	}
 }
