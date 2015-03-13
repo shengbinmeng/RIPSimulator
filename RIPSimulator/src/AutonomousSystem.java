@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 public class AutonomousSystem {
-	static final int MAX_HOPS = -1;
+	static final int UNAVAILABLE_HOP_NUMBER = 16;
 	
 	private ArrayList<RipRouter> routers;
 	private ArrayList<String> networks;
@@ -33,7 +33,7 @@ public class AutonomousSystem {
 					entry.hopNumber = 1;
 				} else {
 					entry.nextRouter = null;
-					entry.hopNumber = MAX_HOPS;
+					entry.hopNumber = UNAVAILABLE_HOP_NUMBER;
 				}
 				router.addTableEntry(entry);
 			}
@@ -76,7 +76,7 @@ public class AutonomousSystem {
 				boolean influenced = false;
 				for (int j = 0; j < neighbours.size(); j++) {
 					RipRouter neighbour = neighbours.get(j);
-					boolean updated = neighbour.updateRoutingTable(router.getRoutingTable());
+					boolean updated = neighbour.updateRoutingTable(router);
 					if (updated) {
 						influenced = true;
 					}
@@ -123,16 +123,26 @@ class RipRouter {
 		neighbours.add(router);
 	}
 	
-	public boolean updateRoutingTable(ArrayList<TableEntry> receivedTable) {
-		//TODO: Do update
-		return false;
+	public boolean updateRoutingTable(RipRouter router) {
+		ArrayList<TableEntry> receivedTable = router.getRoutingTable();
+		boolean updated = false;
+		for (int i = 0; i < routingTable.size(); i++) {
+			TableEntry current = routingTable.get(i);
+			TableEntry received = receivedTable.get(i);
+			if (current.hopNumber > received.hopNumber + 1) {
+				current.hopNumber = received.hopNumber + 1;
+				current.nextRouter = router;
+				updated = true;
+			}
+		}
+		return updated;
 	}
 			
 	public void printRoutingTable() {
-		System.out.println("Destination Network | Next Router | Number of Hops");
+		System.out.println("Destination Network | Next Router | Number of Hops to Destination");
 		for (int i = 0; i < routingTable.size(); i++) {
 			TableEntry entry = routingTable.get(i);
-			entry.printContent();
+			entry.print();
 		}
 	}
 	
@@ -155,11 +165,15 @@ class TableEntry {
 	public RipRouter nextRouter;
 	public int hopNumber;
 	
-	public void printContent() {
+	public void print() {
 		String routerName = "--";
 		if (nextRouter != null) {
 			routerName = nextRouter.getName();
 		}
-		System.out.println(destinationNet + " | " + routerName  + " | " + hopNumber);
+		String hops = "" + hopNumber;
+		if (hopNumber == AutonomousSystem.UNAVAILABLE_HOP_NUMBER) {
+			hops = "INF";
+		}
+		System.out.println(destinationNet + " | " + routerName  + " | " + hops);
 	}
 }
