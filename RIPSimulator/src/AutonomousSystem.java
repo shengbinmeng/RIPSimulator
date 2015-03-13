@@ -203,7 +203,7 @@ class RipRouter {
 					// Make sure the hop number does not exceed the infinity value 
 					if (current.hopNumber > AutonomousSystem.HOP_NUMBER_INFINITY) {
 						current.hopNumber = AutonomousSystem.HOP_NUMBER_INFINITY;
-						// Remaining infinity is considered NO update!
+						// Remaining infinity is NOT considered an update!
 						updated = false;
 					}
 				}
