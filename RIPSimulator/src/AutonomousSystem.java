@@ -203,6 +203,8 @@ class RipRouter {
 					// Make sure the hop number does not exceed the infinity value 
 					if (current.hopNumber > AutonomousSystem.HOP_NUMBER_INFINITY) {
 						current.hopNumber = AutonomousSystem.HOP_NUMBER_INFINITY;
+						// Remaining infinity is considered NO update!
+						updated = false;
 					}
 				}
 			}
@@ -260,7 +262,7 @@ class TableEntry {
 		String hops = "" + hopNumber;
 		if (hopNumber == AutonomousSystem.HOP_NUMBER_INFINITY) {
 			// More readable for the infinity hop number
-			hops = "INF";
+			hops += "(Infinity)";
 		}
 		System.out.println(destinationNet + " | " + routerName  + " | " + hops);
 	}
