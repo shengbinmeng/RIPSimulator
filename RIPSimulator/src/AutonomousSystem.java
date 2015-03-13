@@ -6,12 +6,12 @@ public class AutonomousSystem {
 	
 	private ArrayList<RipRouter> routers;
 	private ArrayList<String> networks;
-	private boolean instability;
+	private boolean instable;
 	
 	AutonomousSystem() {
 		routers = new ArrayList<RipRouter>();
 		networks = new ArrayList<String>();
-		instability = false;
+		instable = false;
 	}
 	
 	void configure() {
@@ -67,7 +67,7 @@ public class AutonomousSystem {
 	}
 	
 	void simulateInstability() {
-		instability = true;
+		instable = true;
 		simulate();
 	}
 	
@@ -105,8 +105,8 @@ public class AutonomousSystem {
 					converged = false;
 				}
 				
-				// For the instability simulation, N1 is disconnected after R1's operation in round 1
-				if (instability) {
+				// For the instable simulation, N1 is disconnected after R1's operation in round 1
+				if (instable) {
 					if (round == 1 && router.getName().equals("R1")) {
 						ArrayList<TableEntry> table = router.getRoutingTable();
 						for (int k = 0; k < table.size(); k++) {
@@ -187,7 +187,7 @@ class RipRouter {
 				if (current.destinationNet.equals(received.destinationNet)) {
 					// The received destination already exists, try to update it
 					existed = true;
-					if (current.nextRouter == router) {
+					if (current.nextRouter != null && current.nextRouter == router) {
 						// If they have the same nextRouter, prefer the received one unless their hop numbers are equal
 						if (current.hopNumber != received.hopNumber + 1) {
 							current.hopNumber = received.hopNumber + 1;
