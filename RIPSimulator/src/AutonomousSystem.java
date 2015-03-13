@@ -1,14 +1,16 @@
 import java.util.ArrayList;
 
 public class AutonomousSystem {
-	static final int UNAVAILABLE_HOP_NUMBER = 16;
+	static final int HOP_NUMBER_INFINITY = 16;
 	
 	private ArrayList<RipRouter> routers;
 	private ArrayList<String> networks;
+	private boolean instability;
 	
 	AutonomousSystem() {
 		routers = new ArrayList<RipRouter>();
 		networks = new ArrayList<String>();
+		instability = false;
 	}
 	
 	void configure() {
@@ -26,16 +28,13 @@ public class AutonomousSystem {
 			
 			for (int j = 0; j < networks.size(); j++) {
 				String net = networks.get(j);
-				TableEntry entry = new TableEntry();
-				entry.destinationNet = net;
 				if (net.equals(connectedNet1) || net.equals(connectedNet2)) {
+					TableEntry entry = new TableEntry();
+					entry.destinationNet = net;
 					entry.nextRouter = null;
 					entry.hopNumber = 1;
-				} else {
-					entry.nextRouter = null;
-					entry.hopNumber = UNAVAILABLE_HOP_NUMBER;
+					router.addTableEntry(entry);
 				}
-				router.addTableEntry(entry);
 			}
 			
 			routers.add(router);
@@ -44,7 +43,7 @@ public class AutonomousSystem {
 		// Configure neighbors
 		for (int i = 0; i < routers.size(); i++) {
 			RipRouter router = routers.get(i);
-			if (i-1 > 0) {
+			if (i-1 >= 0) {
 				router.addNeighbour(routers.get(i-1));
 			}
 			if (i+1 < routers.size()) {
@@ -62,7 +61,12 @@ public class AutonomousSystem {
 		}
 	}
 	
-	void simulate(boolean instability) {
+	void simulateInstability() {
+		instability = true;
+		simulate();
+	}
+	
+	void simulate() {
 		int round = 1;
 		while (true) {
 			System.out.println("## At beginning of Round " + round + "");
@@ -92,11 +96,12 @@ public class AutonomousSystem {
 							TableEntry entry = table.get(k);
 							if (entry.destinationNet.equals("N1")) {
 								entry.nextRouter = null;
-								entry.hopNumber = UNAVAILABLE_HOP_NUMBER;
+								entry.hopNumber = HOP_NUMBER_INFINITY;
 							}
 						}
 					}
 				}
+				
 			}
 			System.out.println("Done operations of Round " + round + ".");
 			System.out.println("");
@@ -139,20 +144,41 @@ class RipRouter {
 	public boolean updateRoutingTable(RipRouter router) {
 		ArrayList<TableEntry> receivedTable = router.getRoutingTable();
 		boolean updated = false;
-		for (int i = 0; i < routingTable.size(); i++) {
-			TableEntry current = routingTable.get(i);
+		for (int i = 0; i < receivedTable.size(); i++) {
 			TableEntry received = receivedTable.get(i);
-			if (current.nextRouter == router) {
-				current.hopNumber = received.hopNumber + 1;
-				updated = true;
-			} else if (current.hopNumber > received.hopNumber + 1) {
-				current.hopNumber = received.hopNumber + 1;
-				current.nextRouter = router;
-				updated = true;
+			boolean existed = false;
+			for (int j = 0; j < routingTable.size(); j++) {
+				TableEntry current = routingTable.get(j);
+				if (current.destinationNet.equals(received.destinationNet)) {
+					// The destination already exist, update it
+					existed = true;
+					if (current.nextRouter == router) {
+						// They have the same nextRouter
+						if (current.hopNumber != received.hopNumber + 1) {
+							current.hopNumber = received.hopNumber + 1;
+							updated = true;
+						}
+					} else if (current.hopNumber > received.hopNumber + 1) {
+						current.hopNumber = received.hopNumber + 1;
+						current.nextRouter = router;
+						updated = true;
+					}
+					
+					// Make sure the hop number does not exceed the infinity value 
+					if (current.hopNumber > AutonomousSystem.HOP_NUMBER_INFINITY) {
+						current.hopNumber = AutonomousSystem.HOP_NUMBER_INFINITY;
+					}
+				}
 			}
 			
-			if (current.hopNumber > AutonomousSystem.UNAVAILABLE_HOP_NUMBER) {
-				current.hopNumber = AutonomousSystem.UNAVAILABLE_HOP_NUMBER;
+			if (!existed) {
+				// The received destination is not in my routing table, add it
+				TableEntry entry = new TableEntry();
+				entry.destinationNet = received.destinationNet;
+				entry.nextRouter = router;
+				entry.hopNumber = received.hopNumber + 1;
+				addTableEntry(entry);
+				updated = true;
 			}
 		}
 		return updated;
@@ -191,7 +217,7 @@ class TableEntry {
 			routerName = nextRouter.getName();
 		}
 		String hops = "" + hopNumber;
-		if (hopNumber == AutonomousSystem.UNAVAILABLE_HOP_NUMBER) {
+		if (hopNumber == AutonomousSystem.HOP_NUMBER_INFINITY) {
 			hops = "INF";
 		}
 		System.out.println(destinationNet + " | " + routerName  + " | " + hops);
